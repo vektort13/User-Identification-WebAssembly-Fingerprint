@@ -1,0 +1,1121 @@
+<!doctype html>
+<!--
+  RU: Vektor T13 Technologies — Web Assembly Browser Fingerprint (detect.expert)
+  RU: Разработал: Dmytro Momot
+  RU: Сайт: detect.expert
+
+  EN: Vektor T13 Technologies — Web Assembly Browser Fingerprint (detect.expert)
+  EN: Developed by: Dmytro Momot
+  EN: Site: detect.expert
+
+  ZH-CN: Vektor T13 Technologies — Web Assembly 浏览器指纹 (detect.expert)
+  ZH-CN: 开发者：Dmytro Momot
+  ZH-CN: 网站：detect.expert
+
+  VI: Vektor T13 Technologies — Dấu vân tay trình duyệt Web Assembly (detect.expert)
+  VI: Phát triển bởi: Dmytro Momot
+  VI: Trang: detect.expert
+-->
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Vektor T13 - Web Assembly Browser Fingerprint | detect.expert</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{
+      --bg:#0b0c0f; --fg:#e6e7eb; --muted:#b8bbc2;
+      --card:#141826; --border:#2a2f3a; --accent:#6aa7ff;
+      --ok:#2fd39a; --bad:#f17575; --warn:#f5c44b;
+      --shadow:0 8px 24px rgba(0,0,0,.25);
+    }
+    @media (prefers-color-scheme: light){
+      :root{ --bg:#f7f8fb; --fg:#101215; --muted:#586172; --card:#fff; --border:#e6e8ef; --accent:#2563eb; --ok:#0f9d58; --bad:#c62828; --warn:#b45309; --shadow:0 8px 24px rgba(0,0,0,.06); }
+    }
+    html,body{height:100%}
+    body{margin:0; background:var(--bg); color:var(--fg); font:14px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,sans-serif;}
+    .wrap{max-width:1150px; margin:32px auto; padding:0 20px;}
+    h1{font-size:26px; margin:0 0 6px;}
+    .sub{color:var(--muted); margin:0 0 18px;}
+    .row{display:flex; flex-wrap:wrap; gap:12px; align-items:center;}
+    .card{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px; box-shadow:var(--shadow);}
+    .grid{display:grid; gap:16px;}
+    @media (min-width: 980px){ .grid-2{grid-template-columns:1fr 1fr} }
+    button{background:transparent; color:var(--fg); border:1px solid var(--border); padding:8px 14px; border-radius:10px; cursor:pointer}
+    button.primary{background:linear-gradient(135deg,var(--accent),#8fc6ff); color:#fff; border-color:transparent;}
+    button:disabled{opacity:.6; cursor:not-allowed}
+    select,input[type="text"]{background:transparent; color:var(--fg); border:1px solid var(--border); padding:8px 10px; border-radius:10px;}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+    .muted{color:var(--muted)}
+    canvas{width:100%; height:160px; display:block; background:transparent}
+    table{width:100%; border-collapse:collapse; font-size:13px;}
+    th,td{border-bottom:1px solid var(--border); padding:6px 8px; text-align:left;}
+    .pill{display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid var(--border); font-size:12px; color:var(--muted)}
+    .flex-between{display:flex; justify-content:space-between; align-items:center; gap:12px}
+    .progress{display:flex; gap:10px; align-items:center}
+    .bar{position:relative; width:240px; height:10px; border-radius:999px; background:rgba(127,127,127,.2); overflow:hidden; border:1px solid var(--border)}
+    .bar > i{display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--accent),#9dd3ff);}
+    .pct{min-width:44px; text-align:right; font-variant-numeric:tabular-nums;}
+    .badge{font-size:12px; padding:2px 8px; border-radius:999px; border:1px solid var(--border);}
+
+    /* Vektor T13 language switcher (top-right) */
+    .topbar{display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap;}
+    .lang{display:inline-flex; gap:8px; align-items:center; white-space:nowrap; margin-left:auto;}
+    .lang select{width:190px;}
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div>
+      <h1 data-i18n="ui.h1">Vektor T13 - Web Assembly Browser Fingerprint</h1>
+      <p class="sub" data-i18n-html="ui.sub">
+        <b>Vektor T13 Technologies</b> • <b>detect.expert</b> • Разработал <b>Dmytro Momot</b>.<br/>
+        Локальная демонстрация: timing‑микротесты на границе JS↔Wasm (включая <b>scripted getter/setter</b>) дают устойчивый сигнал устройства/браузера.
+      </p>
+    </div>
+
+    <div class="lang">
+      <label for="lang" data-i18n="ui.langLabel">Язык:</label>
+      <select id="lang" aria-label="Language">
+        <option value="ru">Русский</option>
+        <option value="en">English</option>
+        <option value="zh">中文(简体)</option>
+        <option value="vi">Tiếng Việt</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="flex-between">
+      <div id="status" data-i18n-html="status.checking">Статус: Проверка…</div>
+      <div class="row">
+        <span class="pill" id="galleryCount">Галерея: 0</span>
+        <span class="pill" id="ua">UA: —</span>
+      </div>
+    </div>
+    <p class="muted" style="margin:8px 0 0" data-i18n-html="ui.noNet">
+      Эта страница <b>не делает сетевых запросов</b>. Все бенчмарки выполняются локально.
+      Для стабильных результатов держи вкладку в фокусе и закрой тяжёлые фоновые приложения.
+    </p>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="row">
+      <div>
+        <span data-i18n="ui.trials">Trials:</span>
+        <select id="trials"><option>1</option><option selected>3</option><option>5</option></select>
+      </div>
+      <div>
+        <span data-i18n="ui.iters">Iterations per test:</span>
+        <select id="iters">
+          <option value="20000" data-i18n="ui.iters.fast">20k (fast)</option>
+          <option value="50000" selected data-i18n="ui.iters.medium">50k</option>
+          <option value="100000" data-i18n="ui.iters.slow">100k</option>
+        </select>
+      </div>
+      <div>
+        <span data-i18n="ui.bins">Downsample bins:</span>
+        <select id="bins"><option>16</option><option selected>32</option><option>64</option></select>
+      </div>
+      <div>
+        <span data-i18n="ui.preset">Preset:</span>
+        <select id="preset">
+          <option value="core" selected data-i18n="ui.preset.core">Core (SG0, SS1, SS2, J2W, W2J)</option>
+          <option value="extended" data-i18n="ui.preset.extended">Extended (adds known/generic 0/1/2)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:10px">
+      <button id="collect" class="primary" data-i18n="btn.collect">Collect fingerprint</button>
+      <input id="label" type="text" data-i18n-placeholder="ui.labelPlaceholder" placeholder="Label, e.g. 'My-Laptop-Firefox'" />
+      <button id="enroll" disabled data-i18n="btn.enroll">Enroll locally</button>
+      <button id="identify" disabled data-i18n="btn.identify">Identify</button>
+      <button id="export" disabled data-i18n="btn.export">Export</button>
+      <input type="file" id="importFile" style="display:none" />
+      <button id="importBtn" data-i18n="btn.import">Import</button>
+      <button id="clear" data-i18n="btn.clear">Clear</button>
+
+      <div class="progress" style="margin-left:auto">
+        <span class="pct" id="pct">0%</span>
+        <div class="bar"><i id="bar"></i></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-2" style="margin-top:16px">
+    <div class="card">
+      <div class="flex-between">
+        <h3 style="margin:0" data-i18n="card.current">Current fingerprint</h3>
+        <div class="row">
+          <span class="mono" id="hash">SHA‑256: —</span>
+          <button id="copyHash" data-i18n="btn.copyHash">Copy hash</button>
+        </div>
+      </div>
+
+      <table style="margin-top:8px">
+        <thead>
+          <tr>
+            <th data-i18n="tbl.test">Test</th>
+            <th data-i18n="tbl.time">Time</th>
+            <th data-i18n="tbl.ms10k">ms / 10k ops</th>
+          </tr>
+        </thead>
+        <tbody id="tbl"></tbody>
+      </table>
+
+      <div id="charts" style="margin-top:10px"></div>
+
+      <p class="muted" style="margin-top:8px" data-i18n-html="card.hashNote">
+        Hash is computed over quantized, concatenated normalized features (<code>SubtleCrypto.digest('SHA-256')</code>).
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="flex-between">
+        <h3 style="margin:0" data-i18n="card.classify">Classification & Identification</h3>
+        <span class="muted" data-i18n="card.ratiosNote">Ratios: <code>SS1/SG0</code>, <code>SS2/SG0</code> → Chromium? (thresholds)</span>
+      </div>
+
+      <div style="margin-top:6px">
+        <div class="row">
+          <span class="badge" id="ratio1">SS1/SG0: —</span>
+          <span class="badge" id="ratio2">SS2/SG0: —</span>
+          <span class="badge" id="chromium">Chromium? —</span>
+        </div>
+      </div>
+
+      <canvas id="gauge" style="height:80px; margin-top:8px"></canvas>
+      <pre id="idents" class="mono" style="min-height:120px; white-space:pre-wrap; margin:10px 0 0"></pre>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h3 style="margin:0 0 8px" data-i18n="about.title">About & References</h3>
+    <p class="muted" style="margin:8px 0" data-i18n-html="about.text">
+      Основано на идее: <b>“Browser Fingerprinting Using WebAssembly”</b> (arXiv:2506.00719, 31 May 2025).
+      Используются timing‑микротесты, векторы признаков, квантизация и локальная идентификация (cosine/JSD).
+    </p>
+  </div>
+
+  <p class="muted" style="margin:14px 2px 0" data-i18n-html="footer">
+    © <b>Vektor T13 Technologies</b> • <b>detect.expert</b> • Разработал <b>Dmytro Momot</b>
+  </p>
+</div>
+
+<script>
+/*
+  RU: Vektor T13 Technologies • detect.expert — Разработал Dmytro Momot
+  EN: Vektor T13 Technologies • detect.expert — Developed by Dmytro Momot
+  ZH-CN: Vektor T13 Technologies • detect.expert — 开发者：Dmytro Momot
+  VI: Vektor T13 Technologies • detect.expert — Phát triển bởi Dmytro Momot
+
+  RU: Demo: локальные микротесты на границе JS↔Wasm + локальная “галерея” для enroll/identify.
+  EN: Demo: local micro-tests across JS↔Wasm boundary + local gallery for enroll/identify.
+  ZH-CN: 演示：JS↔Wasm 边界的本地微基准 + 本地样本库（enroll/identify）。
+  VI: Demo: vi kiểm tra vi mô cục bộ trên biên JS↔Wasm + bộ sưu tập cục bộ để enroll/identify.
+*/
+(async function(){
+  'use strict';
+
+  const $ = s => document.querySelector(s);
+
+  // Elements
+  const statusEl = $('#status'), uaEl = $('#ua'), galleryCountEl = $('#galleryCount');
+  const tbl = $('#tbl'), charts = $('#charts'), hashEl = $('#hash'), identsEl = $('#idents');
+  const r1El = $('#ratio1'), r2El = $('#ratio2'), chromEl = $('#chromium'), gauge = $('#gauge');
+  const btnCollect = $('#collect'), btnEnroll = $('#enroll'), btnIdentify = $('#identify');
+  const btnExport = $('#export'), btnImport = $('#importBtn'), fileImport = $('#importFile'), btnClear = $('#clear'), btnCopy = $('#copyHash');
+  const selTrials = $('#trials'), selIters = $('#iters'), selBins = $('#bins'), selPreset = $('#preset');
+  const inputLabel = $('#label');
+  const bar = $('#bar'), pct = $('#pct');
+  const langSel = $('#lang');
+
+  // Local storage gallery
+  const GKEY = 'wasm_fp_gallery_v1';
+  const readGallery = () => { try { return JSON.parse(localStorage.getItem(GKEY) || '[]'); } catch { return []; } };
+  const writeGallery = (arr) => localStorage.setItem(GKEY, JSON.stringify(arr));
+
+  // i18n -------------------------------------------------------------
+  const SUPPORTED_LANGS = ['ru','en','zh','vi'];
+
+  const I18N = {
+    ru: {
+      'doc.title': 'Vektor T13 - Web Assembly Browser Fingerprint | detect.expert',
+      'ui.h1': 'Vektor T13 - Web Assembly Browser Fingerprint',
+      'ui.langLabel': 'Язык:',
+      'ui.sub': `<b>Vektor T13 Technologies</b> • <b>detect.expert</b> • Разработал <b>Dmytro Momot</b>.<br/>
+Локальная демонстрация: timing‑микротесты на границе JS↔Wasm (включая <b>scripted getter/setter</b>) дают устойчивый сигнал устройства/браузера.`,
+      'ui.noNet': `Эта страница <b>не делает сетевых запросов</b>. Все бенчмарки выполняются локально.
+Для стабильных результатов держи вкладку в фокусе и закрой тяжёлые фоновые приложения.`,
+
+      'ui.trials': 'Trials:',
+      'ui.iters': 'Iterations per test:',
+      'ui.iters.fast': '20k (быстро)',
+      'ui.iters.medium': '50k',
+      'ui.iters.slow': '100k (долго)',
+      'ui.bins': 'Downsample bins:',
+      'ui.preset': 'Preset:',
+      'ui.preset.core': 'Core (SG0, SS1, SS2, J2W, W2J)',
+      'ui.preset.extended': 'Extended (adds known/generic 0/1/2)',
+      'ui.labelPlaceholder': "Метка, напр. 'My-Laptop-Firefox'",
+
+      'btn.collect': 'Собрать отпечаток',
+      'btn.enroll': 'Добавить локально',
+      'btn.identify': 'Сравнить',
+      'btn.export': 'Экспорт',
+      'btn.import': 'Импорт',
+      'btn.clear': 'Очистить',
+      'btn.copyHash': 'Копировать hash',
+      'btn.copied': 'Скопировано!',
+
+      'card.current': 'Текущий отпечаток',
+      'tbl.test': 'Тест',
+      'tbl.time': 'Время',
+      'tbl.ms10k': 'мс / 10k ops',
+      'card.hashNote': `Hash считается по квантизированным нормализованным признакам (<code>SubtleCrypto.digest('SHA-256')</code>).`,
+
+      'card.classify': 'Классификация и идентификация',
+      'card.ratiosNote': 'Отношения: <code>SS1/SG0</code>, <code>SS2/SG0</code> → Chromium? (пороги)',
+
+      'about.title': 'О проекте и ссылки',
+      'about.text': `Основано на идее: <b>“Browser Fingerprinting Using WebAssembly”</b> (arXiv:2506.00719, 31 May 2025).
+Используются timing‑микротесты, векторы признаков, квантизация и локальная идентификация (cosine/JSD).`,
+
+      'footer': '© <b>Vektor T13 Technologies</b> • <b>detect.expert</b> • Разработал <b>Dmytro Momot</b>',
+
+      'status.checking': 'Статус: Проверка…',
+      'status.wasmOk': 'Статус: <b style="color:var(--ok)">OK — WebAssembly готов</b>',
+      'status.wasmFail': 'Статус: <b style="color:var(--bad)">Ошибка инициализации WebAssembly</b>',
+      'status.ready': 'Статус: <b style="color:var(--ok)">Готово</b>',
+
+      'pill.gallery': 'Галерея: {n}',
+      'pill.ua': 'UA: {ua}',
+
+      'badge.r1': 'SS1/SG0: {v}',
+      'badge.r2': 'SS2/SG0: {v}',
+      'badge.chromium': 'Chromium? {v}',
+      'chromium.yes': 'Скорее ДА',
+      'chromium.no': 'Скорее НЕТ',
+
+      'gauge.cosine': 'cosine',
+
+      'msg.collectFirst': 'Сначала нажми “Собрать отпечаток”.',
+      'msg.noSamples': 'Нет локальных образцов — нажми “Добавить локально”.',
+      'msg.imported': 'Импортировано образцов: {n}.',
+      'msg.invalidJson': 'Неверный JSON.',
+      'msg.parseFail': 'Не удалось распарсить JSON.',
+      'msg.galleryCleared': 'Галерея очищена.',
+      'msg.enrolled': 'Добавлено: {label}\nВсего образцов: {n}',
+      'msg.error': 'Ошибка: {e}',
+
+      'id.total': 'Всего образцов: {n}',
+      'id.best': 'Лучшее совпадение: {label}',
+      'id.top3': 'Топ‑3:',
+      'id.decisionSame': 'Решение: похоже на ТО ЖЕ устройство (пороги пройдены).',
+      'id.decisionDiff': 'Решение: скорее ДРУГОЕ устройство.'
+    },
+
+    en: {
+      'doc.title': 'Vektor T13 - Web Assembly Browser Fingerprint | detect.expert',
+      'ui.h1': 'Vektor T13 - Web Assembly Browser Fingerprint',
+      'ui.langLabel': 'Language:',
+      'ui.sub': `<b>Vektor T13 Technologies</b> • <b>detect.expert</b> • Developed by <b>Dmytro Momot</b>.<br/>
+Local demo: timing micro‑tests across the JS↔Wasm boundary (including <b>scripted getter/setter</b>) yield a device/browser‑specific signal.`,
+      'ui.noNet': `This page makes <b>no network requests</b>. All benchmarks run locally.
+For stable results, keep the tab focused and close heavy background apps.`,
+
+      'ui.trials': 'Trials:',
+      'ui.iters': 'Iterations per test:',
+      'ui.iters.fast': '20k (fast)',
+      'ui.iters.medium': '50k',
+      'ui.iters.slow': '100k',
+      'ui.bins': 'Downsample bins:',
+      'ui.preset': 'Preset:',
+      'ui.preset.core': 'Core (SG0, SS1, SS2, J2W, W2J)',
+      'ui.preset.extended': 'Extended (adds known/generic 0/1/2)',
+      'ui.labelPlaceholder': "Label, e.g. 'My-Laptop-Firefox'",
+
+      'btn.collect': 'Collect fingerprint',
+      'btn.enroll': 'Enroll locally',
+      'btn.identify': 'Identify',
+      'btn.export': 'Export',
+      'btn.import': 'Import',
+      'btn.clear': 'Clear',
+      'btn.copyHash': 'Copy hash',
+      'btn.copied': 'Copied!',
+
+      'card.current': 'Current fingerprint',
+      'tbl.test': 'Test',
+      'tbl.time': 'Time',
+      'tbl.ms10k': 'ms / 10k ops',
+      'card.hashNote': `Hash is computed over quantized, concatenated normalized features (<code>SubtleCrypto.digest('SHA-256')</code>).`,
+
+      'card.classify': 'Classification & Identification',
+      'card.ratiosNote': 'Ratios: <code>SS1/SG0</code>, <code>SS2/SG0</code> → Chromium? (thresholds)',
+
+      'about.title': 'About & References',
+      'about.text': `Based on the idea: <b>“Browser Fingerprinting Using WebAssembly”</b> (arXiv:2506.00719, 31 May 2025).
+Uses timing micro‑tests, feature vectors, quantization, and local identification (cosine/JSD).`,
+
+      'footer': '© <b>Vektor T13 Technologies</b> • <b>detect.expert</b> • Developed by <b>Dmytro Momot</b>',
+
+      'status.checking': 'Status: Checking…',
+      'status.wasmOk': 'Status: <b style="color:var(--ok)">OK — WebAssembly ready</b>',
+      'status.wasmFail': 'Status: <b style="color:var(--bad)">Failed to init WebAssembly</b>',
+      'status.ready': 'Status: <b style="color:var(--ok)">Ready</b>',
+
+      'pill.gallery': 'Gallery: {n}',
+      'pill.ua': 'UA: {ua}',
+
+      'badge.r1': 'SS1/SG0: {v}',
+      'badge.r2': 'SS2/SG0: {v}',
+      'badge.chromium': 'Chromium? {v}',
+      'chromium.yes': 'Likely YES',
+      'chromium.no': 'Likely NO',
+
+      'gauge.cosine': 'cosine',
+
+      'msg.collectFirst': 'Collect first.',
+      'msg.noSamples': 'No enrolled samples — press “Enroll locally”.',
+      'msg.imported': 'Imported samples: {n}.',
+      'msg.invalidJson': 'Invalid JSON.',
+      'msg.parseFail': 'Failed to parse JSON.',
+      'msg.galleryCleared': 'Gallery cleared.',
+      'msg.enrolled': 'Enrolled: {label}\nTotal samples: {n}',
+      'msg.error': 'Error: {e}',
+
+      'id.total': 'Total enrolled: {n}',
+      'id.best': 'Best: {label}',
+      'id.top3': 'Top‑3:',
+      'id.decisionSame': 'Decision: Looks like the SAME device (thresholds met).',
+      'id.decisionDiff': 'Decision: LIKELY a DIFFERENT device.'
+    },
+
+    zh: {
+      'doc.title': 'Vektor T13 - Web Assembly 浏览器指纹 | detect.expert',
+      'ui.h1': 'Vektor T13 - Web Assembly Browser Fingerprint',
+      'ui.langLabel': '语言：',
+      'ui.sub': `<b>Vektor T13 Technologies</b> • <b>detect.expert</b> • 开发者：<b>Dmytro Momot</b>。<br/>
+本地演示：在 JS↔Wasm 边界进行 timing 微测试（包含 <b>scripted getter/setter</b>），得到设备/浏览器特征信号。`,
+      'ui.noNet': `本页面 <b>不发起任何网络请求</b>。所有基准测试均在本地运行。
+为了稳定结果，请保持标签页在前台并关闭较重的后台程序。`,
+
+      'ui.trials': '试验次数：',
+      'ui.iters': '每项迭代：',
+      'ui.iters.fast': '20k（快）',
+      'ui.iters.medium': '50k',
+      'ui.iters.slow': '100k（慢）',
+      'ui.bins': '下采样 bins：',
+      'ui.preset': '预设：',
+      'ui.preset.core': 'Core (SG0, SS1, SS2, J2W, W2J)',
+      'ui.preset.extended': 'Extended（增加 known/generic 0/1/2）',
+      'ui.labelPlaceholder': "标签，例如 'My-Laptop-Firefox'",
+
+      'btn.collect': '采集指纹',
+      'btn.enroll': '本地录入',
+      'btn.identify': '识别',
+      'btn.export': '导出',
+      'btn.import': '导入',
+      'btn.clear': '清空',
+      'btn.copyHash': '复制 hash',
+      'btn.copied': '已复制！',
+
+      'card.current': '当前指纹',
+      'tbl.test': '测试',
+      'tbl.time': '时间',
+      'tbl.ms10k': '毫秒 / 10k ops',
+      'card.hashNote': `Hash 由量化后的归一化特征计算得到（<code>SubtleCrypto.digest('SHA-256')</code>）。`,
+
+      'card.classify': '分类与识别',
+      'card.ratiosNote': '比值：<code>SS1/SG0</code>、<code>SS2/SG0</code> → Chromium?（阈值）',
+
+      'about.title': '说明与参考',
+      'about.text': `基于思路：<b>“Browser Fingerprinting Using WebAssembly”</b>（arXiv:2506.00719，2025‑05‑31）。
+使用 timing 微测试、特征向量、量化与本地识别（cosine/JSD）。`,
+
+      'footer': '© <b>Vektor T13 Technologies</b> • <b>detect.expert</b> • 开发者：<b>Dmytro Momot</b>',
+
+      'status.checking': '状态：检查中…',
+      'status.wasmOk': '状态：<b style="color:var(--ok)">OK — WebAssembly 就绪</b>',
+      'status.wasmFail': '状态：<b style="color:var(--bad)">WebAssembly 初始化失败</b>',
+      'status.ready': '状态：<b style="color:var(--ok)">就绪</b>',
+
+      'pill.gallery': '样本库：{n}',
+      'pill.ua': 'UA：{ua}',
+
+      'badge.r1': 'SS1/SG0: {v}',
+      'badge.r2': 'SS2/SG0: {v}',
+      'badge.chromium': 'Chromium? {v}',
+      'chromium.yes': '可能是',
+      'chromium.no': '可能不是',
+
+      'gauge.cosine': 'cosine',
+
+      'msg.collectFirst': '请先采集指纹。',
+      'msg.noSamples': '没有本地样本——请点击“本地录入”。',
+      'msg.imported': '已导入样本：{n}。',
+      'msg.invalidJson': 'JSON 无效。',
+      'msg.parseFail': '解析 JSON 失败。',
+      'msg.galleryCleared': '样本库已清空。',
+      'msg.enrolled': '已录入：{label}\n样本总数：{n}',
+      'msg.error': '错误：{e}',
+
+      'id.total': '已录入总数：{n}',
+      'id.best': '最佳：{label}',
+      'id.top3': '前三：',
+      'id.decisionSame': '结论：看起来是同一设备（满足阈值）。',
+      'id.decisionDiff': '结论：很可能是不同设备。'
+    },
+
+    vi: {
+      'doc.title': 'Vektor T13 - Web Assembly Browser Fingerprint | detect.expert',
+      'ui.h1': 'Vektor T13 - Web Assembly Browser Fingerprint',
+      'ui.langLabel': 'Ngôn ngữ:',
+      'ui.sub': `<b>Vektor T13 Technologies</b> • <b>detect.expert</b> • Phát triển bởi <b>Dmytro Momot</b>.<br/>
+Demo cục bộ: micro‑test timing trên biên JS↔Wasm (bao gồm <b>scripted getter/setter</b>) tạo tín hiệu đặc trưng thiết bị/trình duyệt.`,
+      'ui.noNet': `Trang này <b>không thực hiện yêu cầu mạng</b>. Mọi benchmark chạy cục bộ.
+Để kết quả ổn định, hãy giữ tab ở foreground và đóng các ứng dụng chạy nền nặng.`,
+
+      'ui.trials': 'Số lần thử:',
+      'ui.iters': 'Vòng lặp mỗi test:',
+      'ui.iters.fast': '20k (nhanh)',
+      'ui.iters.medium': '50k',
+      'ui.iters.slow': '100k (chậm)',
+      'ui.bins': 'Bins downsample:',
+      'ui.preset': 'Preset:',
+      'ui.preset.core': 'Core (SG0, SS1, SS2, J2W, W2J)',
+      'ui.preset.extended': 'Extended (thêm known/generic 0/1/2)',
+      'ui.labelPlaceholder': "Nhãn, ví dụ 'My-Laptop-Firefox'",
+
+      'btn.collect': 'Thu thập fingerprint',
+      'btn.enroll': 'Enroll cục bộ',
+      'btn.identify': 'Identify',
+      'btn.export': 'Export',
+      'btn.import': 'Import',
+      'btn.clear': 'Xóa',
+      'btn.copyHash': 'Copy hash',
+      'btn.copied': 'Đã copy!',
+
+      'card.current': 'Fingerprint hiện tại',
+      'tbl.test': 'Test',
+      'tbl.time': 'Thời gian',
+      'tbl.ms10k': 'ms / 10k ops',
+      'card.hashNote': `Hash được tính từ đặc trưng đã lượng tử hoá và chuẩn hoá (<code>SubtleCrypto.digest('SHA-256')</code>).`,
+
+      'card.classify': 'Phân loại & Nhận dạng',
+      'card.ratiosNote': 'Tỉ lệ: <code>SS1/SG0</code>, <code>SS2/SG0</code> → Chromium? (ngưỡng)',
+
+      'about.title': 'Giới thiệu & Tham khảo',
+      'about.text': `Dựa trên ý tưởng: <b>“Browser Fingerprinting Using WebAssembly”</b> (arXiv:2506.00719, 31 May 2025).
+Dùng micro‑test timing, vector đặc trưng, lượng tử hoá và nhận dạng cục bộ (cosine/JSD).`,
+
+      'footer': '© <b>Vektor T13 Technologies</b> • <b>detect.expert</b> • Phát triển bởi <b>Dmytro Momot</b>',
+
+      'status.checking': 'Trạng thái: Đang kiểm tra…',
+      'status.wasmOk': 'Trạng thái: <b style="color:var(--ok)">OK — WebAssembly sẵn sàng</b>',
+      'status.wasmFail': 'Trạng thái: <b style="color:var(--bad)">Không khởi tạo được WebAssembly</b>',
+      'status.ready': 'Trạng thái: <b style="color:var(--ok)">Sẵn sàng</b>',
+
+      'pill.gallery': 'Gallery: {n}',
+      'pill.ua': 'UA: {ua}',
+
+      'badge.r1': 'SS1/SG0: {v}',
+      'badge.r2': 'SS2/SG0: {v}',
+      'badge.chromium': 'Chromium? {v}',
+      'chromium.yes': 'Có thể CÓ',
+      'chromium.no': 'Có thể KHÔNG',
+
+      'gauge.cosine': 'cosine',
+
+      'msg.collectFirst': 'Hãy thu thập trước.',
+      'msg.noSamples': 'Chưa có mẫu — hãy nhấn “Enroll cục bộ”.',
+      'msg.imported': 'Đã import mẫu: {n}.',
+      'msg.invalidJson': 'JSON không hợp lệ.',
+      'msg.parseFail': 'Không parse được JSON.',
+      'msg.galleryCleared': 'Đã xóa gallery.',
+      'msg.enrolled': 'Đã enroll: {label}\nTổng mẫu: {n}',
+      'msg.error': 'Lỗi: {e}',
+
+      'id.total': 'Tổng đã enroll: {n}',
+      'id.best': 'Tốt nhất: {label}',
+      'id.top3': 'Top‑3:',
+      'id.decisionSame': 'Kết luận: Có vẻ là CÙNG thiết bị (đạt ngưỡng).',
+      'id.decisionDiff': 'Kết luận: NHIỀU KHẢ NĂNG là thiết bị KHÁC.'
+    }
+  };
+
+  function t(key){
+    return (I18N[currentLang] && I18N[currentLang][key]) || (I18N.en && I18N.en[key]) || key;
+  }
+  function tpl(str, vars){
+    return String(str).replace(/\{(\w+)\}/g, (_, k) => (k in vars ? String(vars[k]) : `{${k}}`));
+  }
+
+  let currentLang = 'ru';
+  let statusKey = 'status.checking';
+  let copyKey = 'btn.copyHash';
+  let current = null;
+  let lastIdentify = null;
+  let lastMsg = null; // {key, vars}
+
+  function applyStaticI18N(){
+    document.documentElement.lang = (currentLang === 'zh') ? 'zh-CN' : currentLang;
+    document.title = t('doc.title');
+
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      el.textContent = t(el.dataset.i18n);
+    });
+    document.querySelectorAll('[data-i18n-html]').forEach(el => {
+      el.innerHTML = t(el.dataset.i18nHtml);
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      el.placeholder = t(el.dataset.i18nPlaceholder);
+    });
+  }
+
+  function setStatusKey(k){
+    statusKey = k;
+    statusEl.innerHTML = t(k);
+  }
+
+  function setGalleryCount(){
+    galleryCountEl.textContent = tpl(t('pill.gallery'), { n: readGallery().length });
+  }
+
+  function setUA(){
+    uaEl.textContent = tpl(t('pill.ua'), { ua: navigator.userAgent });
+  }
+
+  function setCopyLabel(){
+    btnCopy.textContent = t(copyKey);
+  }
+
+  function setMsg(key, vars = {}){
+    lastMsg = { key, vars };
+    identsEl.textContent = tpl(t(key), vars);
+  }
+
+  function detectInitialLang(){
+    try {
+      const saved = localStorage.getItem('vt13_wasm_lang');
+      if (SUPPORTED_LANGS.includes(saved)) return saved;
+    } catch {}
+    const nav = (navigator.language || 'en').toLowerCase();
+    if (nav.startsWith('ru')) return 'ru';
+    if (nav.startsWith('zh')) return 'zh';
+    if (nav.startsWith('vi')) return 'vi';
+    return 'en';
+  }
+
+  function setLanguage(lang, {persist=true} = {}){
+    currentLang = SUPPORTED_LANGS.includes(lang) ? lang : 'en';
+    langSel.value = currentLang;
+
+    if (persist) {
+      try { localStorage.setItem('vt13_wasm_lang', currentLang); } catch {}
+    }
+
+    applyStaticI18N();
+    setUA();
+    setGalleryCount();
+    statusEl.innerHTML = t(statusKey);
+    setCopyLabel();
+
+    // Re-render ratio badges if we already have a fingerprint
+    if (current && current.ratios) renderRatios();
+
+    // Re-render identify output if we have it
+    if (lastIdentify) renderIdentify(lastIdentify);
+
+    // Re-render last simple message if present
+    if (lastMsg && !lastIdentify) setMsg(lastMsg.key, lastMsg.vars);
+  }
+
+  langSel.addEventListener('change', () => setLanguage(langSel.value, {persist:true}));
+
+  // Init language before anything else updates UI
+  setLanguage(detectInitialLang(), {persist:false});
+
+  // --------- Progress ----------
+  function setProgress(fr){
+    const p = Math.max(0, Math.min(1, fr||0));
+    bar.style.width = (p*100).toFixed(0)+'%';
+    pct.textContent = (p*100).toFixed(0)+'%';
+  }
+
+  // --------- Helpers: math & hash & charts ----------
+  function medianOf(vals){
+    const a = vals.slice().sort((x,y)=>x-y);
+    const m = Math.floor(a.length/2);
+    return a.length%2 ? a[m] : (a[m-1]+a[m])/2;
+  }
+  function normalize(arr){
+    const gm = Math.exp(arr.reduce((s,x)=>s+Math.log(x),0)/arr.length);
+    return arr.map(x=>x/gm);
+  }
+  function downsample(a,bins){
+    const L=a.length, out=new Array(bins).fill(0);
+    for(let i=0;i<L;i++){ out[Math.floor(i*bins/L)] += a[i]; }
+    const s=out.reduce((x,y)=>x+y,0)||1;
+    return out.map(v=>v/s);
+  }
+  function cosine(u,v){
+    let dot=0,n1=0,n2=0;
+    for(let i=0;i<u.length;i++){ dot+=u[i]*v[i]; n1+=u[i]*u[i]; n2+=v[i]*v[i]; }
+    return dot/(Math.sqrt(n1)*Math.sqrt(n2)||1);
+  }
+  function jsd(p,q){
+    const m=p.map((x,i)=>.5*(x+q[i]));
+    const KL=(a,b)=>{ let s=0; for(let i=0;i<a.length;i++){ if(a[i]>0&&b[i]>0) s+=a[i]*Math.log2(a[i]/b[i]); } return s; };
+    return Math.sqrt(.5*KL(p,m)+.5*KL(q,m));
+  }
+  async function sha256Hex(bytes){
+    const d = await crypto.subtle.digest('SHA-256',bytes);
+    return [...new Uint8Array(d)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  }
+  function drawBars(canvas, values){
+    const dpr=window.devicePixelRatio||1, w=canvas.clientWidth, h=canvas.clientHeight;
+    canvas.width=Math.floor(w*dpr); canvas.height=Math.floor(h*dpr);
+    const ctx=canvas.getContext('2d'); ctx.scale(dpr,dpr);
+    const pad=8, W=w-pad*2, H=h-pad*2, max=Math.max(...values,1e-9), n=values.length, bw=W/n;
+    ctx.clearRect(0,0,w,h);
+    ctx.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--border');
+    ctx.beginPath(); ctx.moveTo(pad,h-pad); ctx.lineTo(w-pad,h-pad); ctx.stroke();
+    ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--accent');
+    for(let i=0;i<n;i++){
+      const v=values[i]/max; const x=pad+i*bw; const bh=v*H;
+      ctx.fillRect(x,h-pad-bh,Math.max(1,bw-1),bh);
+    }
+  }
+  function drawGauge(canvas, value){
+    const dpr=window.devicePixelRatio||1, w=canvas.clientWidth, h=canvas.clientHeight;
+    canvas.width=Math.floor(w*dpr); canvas.height=Math.floor(h*dpr);
+    const ctx=canvas.getContext('2d'); ctx.scale(dpr,dpr);
+    ctx.clearRect(0,0,w,h);
+    const pad=10, W=w-pad*2, y=h/2;
+    ctx.fillStyle='rgba(127,127,127,.2)'; ctx.fillRect(pad,y-8,W,16);
+    const grad=ctx.createLinearGradient(pad,0,pad+W,0);
+    grad.addColorStop(0,getComputedStyle(document.documentElement).getPropertyValue('--accent'));
+    grad.addColorStop(1,'#9dd3ff');
+    ctx.fillStyle=grad;
+    const v=Math.max(0,Math.min(1,value||0));
+    ctx.fillRect(pad,y-8,W*v,16);
+    ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--fg');
+    ctx.font='14px ui-monospace, monospace'; ctx.textBaseline='middle';
+    ctx.fillText(`${t('gauge.cosine')}: ${v.toFixed(4)}`, pad, y-16);
+  }
+
+  // --------- Build a tiny Wasm module (no network) ----------
+  // Exports:
+  //  set_global_one(i32)->(), set_global_two(i32,i32)->(), get_global()->i32, call_js0()->i32 (calls import env.cb)
+  function uleb(n){
+    const a=[];
+    do{ let b=n&0x7F; n>>>=(7); if(n) b|=0x80; a.push(b);}while(n);
+    return a;
+  }
+  function encStr(s){
+    const bytes=new TextEncoder().encode(s);
+    return [...uleb(bytes.length), ...bytes];
+  }
+  function section(id, data){ return [id, ...uleb(data.length), ...data]; }
+  function buildWasm(){
+    const magic=[0x00,0x61,0x73,0x6D, 0x01,0x00,0x00,0x00]; // \0asm, v1
+    // Type section: 4 types
+    // t0: (i32)->(); t1: (i32,i32)->(); t2: ()->i32; t3: ()->i32 (for cb & call_js0)
+    let types=[...uleb(4),
+      0x60, ...uleb(1), 0x7F, ...uleb(0),
+      0x60, ...uleb(2), 0x7F,0x7F, ...uleb(0),
+      0x60, ...uleb(0), ...uleb(1), 0x7F,
+      0x60, ...uleb(0), ...uleb(1), 0x7F
+    ];
+    // Import section: 1 func import env.cb : type t3 (index 3)
+    let imp=[...uleb(1), ...encStr('env'), ...encStr('cb'), 0x00, ...uleb(3)];
+    // Function section: 4 defined funcs with types [0,1,2,3]
+    let func=[...uleb(4), ...uleb(0), ...uleb(1), ...uleb(2), ...uleb(3)];
+    // Global section: 2 mutable i32 globals = 0
+    let glob=[...uleb(2),
+      0x7F,0x01, 0x41,0x00, 0x0B,
+      0x7F,0x01, 0x41,0x00, 0x0B
+    ];
+    // Export section: 4 funcs
+    // func indices: 0=import cb, 1=set1, 2=set2, 3=get, 4=call_js0
+    let exp=[...uleb(4),
+      ...encStr('set_global_one'), 0x00, ...uleb(1),
+      ...encStr('set_global_two'), 0x00, ...uleb(2),
+      ...encStr('get_global'),     0x00, ...uleb(3),
+      ...encStr('call_js0'),       0x00, ...uleb(4)
+    ];
+    // Code section: 4 bodies
+    // f1 set_global_one: local.get 0; global.set 0; end
+    const body1=[0x00, 0x20,0x00, 0x24,0x00, 0x0B];
+    // f2 set_global_two: local.get 0; global.set 0; local.get 1; global.set 1; end
+    const body2=[0x00, 0x20,0x00, 0x24,0x00, 0x20,0x01, 0x24,0x01, 0x0B];
+    // f3 get_global: global.get 0; end
+    const body3=[0x00, 0x23,0x00, 0x0B];
+    // f4 call_js0: call 0; end
+    const body4=[0x00, 0x10,0x00, 0x0B];
+    let code=[...uleb(4),
+      ...uleb(body1.length), ...body1,
+      ...uleb(body2.length), ...body2,
+      ...uleb(body3.length), ...body3,
+      ...uleb(body4.length), ...body4
+    ];
+    const bytes=new Uint8Array([
+      ...magic,
+      ...section(1, types),
+      ...section(2, imp),
+      ...section(3, func),
+      ...section(6, glob),
+      ...section(7, exp),
+      ...section(10, code)
+    ]);
+    return bytes.buffer;
+  }
+
+  // Instantiate Wasm with an imported cb() that exercises Math.sin to make W2J timing informative.
+  let jsCounter = 0;
+  const env = {
+    cb: () => { // return i32
+      const x = Math.sin((jsCounter++ % 360) * Math.PI / 180);
+      return (x*1e6)|0;
+    }
+  };
+
+  let wasm = null;
+  try {
+    const mod = await WebAssembly.compile(buildWasm());
+    const inst = await WebAssembly.instantiate(mod, { env });
+    wasm = inst.exports;
+    setStatusKey('status.wasmOk');
+  } catch (e) {
+    setStatusKey('status.wasmFail');
+    console.error(e);
+    return;
+  }
+
+  // --------- Microtests (timing) ----------
+  function timeit(fn, iters){
+    // simple warmup
+    const warm = Math.min(2000, Math.max(200, Math.floor(iters/50)));
+    fn(warm);
+    const t0 = performance.now(); fn(iters); const t1 = performance.now();
+    return { ms: t1 - t0, msPer10k: (t1 - t0) / (iters/10000) };
+  }
+
+  function test_SG0(iters){
+    // Getter bound to wasm.get_global; occasionally update the global to avoid trivial constant folding.
+    const o = {};
+    Object.defineProperty(o, 'x', { get: wasm.get_global });
+    let acc = 0;
+    for (let i=0;i<iters;i++){
+      if ((i & 1023) === 0) wasm.set_global_one(i|0);
+      acc += o.x;
+    }
+    return acc;
+  }
+
+  function test_SS1(iters){
+    const o = {};
+    Object.defineProperty(o, 'x', { set: wasm.set_global_one });
+    for (let i=0;i<iters;i++){ o.x = i|0; } // 1-arg wasm setter
+  }
+
+  function test_SS2(iters){
+    const o = {};
+    // JS setter passes only one value; wasm function expects two (second defaults to 0). Argument adaptation can be a signal.
+    Object.defineProperty(o, 'x', { set: wasm.set_global_two });
+    for (let i=0;i<iters;i++){ o.x = i|0; } // 2-arg wasm setter (1 value given)
+  }
+
+  function test_JS2W_known0(iters){ let s=0; for (let i=0;i<iters;i++){ s += wasm.get_global(); } return s; }
+  function test_JS2W_known1(iters){ for (let i=0;i<iters;i++){ wasm.set_global_one(i|0); } }
+  function test_JS2W_known2(iters){ for (let i=0;i<iters;i++){ wasm.set_global_two(i|0, (i+1)|0); } }
+  function test_JS2W_generic2(iters){
+    const f = wasm.set_global_two;
+    for (let i=0;i<iters;i++){ f.apply(null, [i|0, (i+1)|0]); }
+  }
+  function test_W2J(iters){ let s=0; for (let i=0;i<iters;i++){ s += wasm.call_js0(); } return s; }
+
+  function getTests(preset){
+    const core = [
+      ['wasm_scripted_getter_0', test_SG0],
+      ['wasm_scripted_setter_1', test_SS1],
+      ['wasm_scripted_setter_2', test_SS2],
+      ['js_to_wasm_known_1', test_JS2W_known1],
+      ['wasm_to_js_cb', test_W2J],
+    ];
+    const extended = core.concat([
+      ['js_to_wasm_known_0', test_JS2W_known0],
+      ['js_to_wasm_known_2', test_JS2W_known2],
+      ['js_to_wasm_generic_2_apply', test_JS2W_generic2],
+    ]);
+    return preset==='extended' ? extended : core;
+  }
+
+  function clearUI(){
+    tbl.innerHTML='';
+    charts.innerHTML='';
+    hashEl.textContent='SHA‑256: —';
+    identsEl.textContent='';
+    drawGauge(gauge,0);
+    lastIdentify = null;
+    lastMsg = null;
+    resetBadges();
+  }
+
+  function resetBadges(){
+    r1El.textContent = tpl(t('badge.r1'), { v:'—' });
+    r2El.textContent = tpl(t('badge.r2'), { v:'—' });
+    chromEl.textContent = tpl(t('badge.chromium'), { v:'—' });
+  }
+
+  function renderRatios(){
+    if (!current || !current.ratios) { resetBadges(); return; }
+    const ratio1 = current.ratios.ratio1;
+    const ratio2 = current.ratios.ratio2;
+    r1El.textContent = tpl(t('badge.r1'), { v: ratio1.toFixed(2) });
+    r2El.textContent = tpl(t('badge.r2'), { v: ratio2.toFixed(2) });
+
+    const isChromium = (ratio1 >= 3.05) && (ratio2 >= 3.10);
+    chromEl.textContent = tpl(t('badge.chromium'), { v: isChromium ? t('chromium.yes') : t('chromium.no') });
+  }
+
+  async function collect(){
+    clearUI(); setProgress(0);
+
+    btnCollect.disabled = true;
+    btnEnroll.disabled = true;
+    btnIdentify.disabled = true;
+    btnExport.disabled = true;
+
+    const trials = parseInt(selTrials.value,10);
+    const iters = parseInt(selIters.value,10);
+    const bins  = parseInt(selBins.value,10);
+    const tests = getTests(selPreset.value);
+
+    const perTest = new Map();
+    const totalSteps = tests.length * trials;
+    let step=0;
+
+    for (const [name, fn] of tests){
+      const vals = [];
+      for (let t0=0;t0<trials;t0++){
+        vals.push( timeit(fn, iters).msPer10k );
+        step++;
+        setProgress(step/totalSteps);
+      }
+      perTest.set(name, medianOf(vals));
+    }
+
+    // Fill table
+    for (const [name] of tests){
+      const msPer10k = perTest.get(name);
+      const ms = (msPer10k * (iters/10000));
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${name}</td><td>${ms.toFixed(2)} ms</td><td>${msPer10k.toFixed(3)}</td>`;
+      tbl.appendChild(tr);
+    }
+
+    // Ratios: SS1/SG0, SS2/SG0 (thresholds 3.05 / 3.10)
+    const sg0 = perTest.get('wasm_scripted_getter_0');
+    const ss1 = perTest.get('wasm_scripted_setter_1');
+    const ss2 = perTest.get('wasm_scripted_setter_2');
+    const ratio1 = ss1/sg0, ratio2 = ss2/sg0;
+
+    // Feature vector: normalized timings (geomean) + ratios; then downsample & hash
+    const names = Array.from(perTest.keys());
+    const vals  = names.map(n=>perTest.get(n));
+    const norm  = normalize(vals);
+    const feats = norm.concat([ratio1, ratio2]);
+
+    const ds = downsample(feats, bins);
+
+    // Chart
+    const canvas = document.createElement('canvas');
+    charts.appendChild(canvas);
+    drawBars(canvas, ds);
+
+    // Hash
+    const q = new Uint8Array(ds.length);
+    for (let i=0;i<ds.length;i++){
+      q[i] = Math.max(0, Math.min(255, Math.round(ds[i]*255)));
+    }
+    const hash = await sha256Hex(q);
+    hashEl.textContent = `SHA‑256: ${hash}`;
+
+    current = {
+      features: ds,
+      raw: perTest,
+      ratios: { ratio1, ratio2, sg0, ss1, ss2 },
+      meta: {
+        createdAt: new Date().toISOString(),
+        userAgent: navigator.userAgent,
+        trials, iters, bins,
+        preset: selPreset.value
+      },
+      hash
+    };
+
+    renderRatios();
+
+    btnEnroll.disabled = false;
+    btnIdentify.disabled = false;
+    btnExport.disabled = false;
+  }
+
+  function renderIdentify(res){
+    if (!res) return;
+
+    drawGauge(gauge, Math.max(0, Math.min(1, res.best.cosine)));
+
+    const lines = [
+      tpl(t('id.total'), { n: res.total }),
+      tpl(t('id.best'), { label: res.best.label }),
+      `  cosine=${res.best.cosine.toFixed(4)}  jsd=${res.best.jsd.toFixed(4)}  l2=${res.best.l2.toFixed(4)}`,
+      `  hash=${res.best.hash}`,
+      '',
+      t('id.top3'),
+      ...res.top3.map((s,i)=>`${i+1}) ${s.label} | cosine=${s.cosine.toFixed(4)} jsd=${s.jsd.toFixed(4)} l2=${s.l2.toFixed(4)}`),
+      '',
+      res.match ? t('id.decisionSame') : t('id.decisionDiff')
+    ];
+
+    identsEl.textContent = lines.join('\n');
+  }
+
+  function identify(){
+    const gal = readGallery();
+
+    if (!current){
+      lastIdentify = null;
+      setMsg('msg.collectFirst');
+      return;
+    }
+    if (!gal.length){
+      lastIdentify = null;
+      setMsg('msg.noSamples');
+      return;
+    }
+
+    const p = current.features;
+
+    function score(entry){
+      const q = entry.features;
+      const L = Math.min(p.length, q.length);
+      const P = p.slice(0,L), Q = q.slice(0,L);
+      const sP = P.reduce((a,b)=>a+b,0)||1, sQ = Q.reduce((a,b)=>a+b,0)||1;
+      for (let i=0;i<L;i++){ P[i]/=sP; Q[i]/=sQ; }
+      const c = cosine(P,Q), d = jsd(P,Q);
+      let l2=0; for(let i=0;i<L;i++){ const x=P[i]-Q[i]; l2+=x*x; } l2=Math.sqrt(l2);
+      return { label: entry.label, hash: entry.hash, cosine:c, jsd:d, l2 };
+    }
+
+    const scored = gal.map(score).sort((a,b)=> (b.cosine - a.cosine) || (a.jsd - b.jsd));
+    const best = scored[0];
+    const match = (best.cosine >= 0.985 && best.jsd <= 0.04);
+
+    lastMsg = null;
+    lastIdentify = {
+      total: gal.length,
+      best,
+      top3: scored.slice(0,3),
+      match
+    };
+
+    renderIdentify(lastIdentify);
+  }
+
+  // --------- UI wiring ----------
+  btnCollect.onclick = async () => {
+    try {
+      await collect();
+      if (readGallery().length) identify();
+    } catch(e) {
+      lastIdentify = null;
+      setMsg('msg.error', { e: (e && e.message) ? e.message : String(e) });
+    }
+  };
+
+  btnIdentify.onclick = identify;
+
+  btnEnroll.onclick = () => {
+    if (!current) return;
+
+    const label = (inputLabel.value.trim() || `sample-${Date.now()}`);
+    const gal = readGallery();
+    gal.push({ label, hash: current.hash, features: current.features, meta: current.meta });
+    writeGallery(gal);
+
+    setGalleryCount();
+    lastIdentify = null;
+    setMsg('msg.enrolled', { label, n: gal.length });
+  };
+
+  btnExport.onclick = () => {
+    const gal = readGallery();
+    const blob = new Blob([JSON.stringify({ gallery: gal }, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download='wasm_fingerprint_gallery.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  btnImport.onclick = ()=> fileImport.click();
+
+  fileImport.onchange = async (e) => {
+    const f = e.target.files && e.target.files[0];
+    if(!f) return;
+
+    try{
+      const data = JSON.parse(await f.text());
+      if(Array.isArray(data.gallery)){
+        writeGallery(data.gallery);
+        setGalleryCount();
+        lastIdentify = null;
+        setMsg('msg.imported', { n: data.gallery.length });
+      } else {
+        lastIdentify = null;
+        setMsg('msg.invalidJson');
+      }
+    } catch {
+      lastIdentify = null;
+      setMsg('msg.parseFail');
+    }
+    fileImport.value='';
+  };
+
+  btnClear.onclick = () => {
+    writeGallery([]);
+    setGalleryCount();
+    lastIdentify = null;
+    setMsg('msg.galleryCleared');
+  };
+
+  btnCopy.onclick = async () => {
+    const txt = hashEl.textContent.replace(/^SHA‑256:\s*/,'').trim();
+    if(!txt || txt==='—') return;
+    try{
+      await navigator.clipboard.writeText(txt);
+      copyKey = 'btn.copied';
+      setCopyLabel();
+      setTimeout(()=>{
+        copyKey = 'btn.copyHash';
+        setCopyLabel();
+      }, 1200);
+    } catch {}
+  };
+
+  // Initial UI state
+  setUA();
+  setGalleryCount();
+  setProgress(0);
+  resetBadges();
+  setStatusKey('status.ready');
+})();
+</script>
+</body>
+</html>
